@@ -113,10 +113,20 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
+      - name: Download metrics artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: metrics
+          path: .
+
       - name: Check eval gate
         run: |
           python - <<'EOF'
-          acc = float("${{ needs.train.outputs.accuracy }}")
+          import json
+          with open('outputs/metrics.json') as f:
+              metrics = json.load(f)
+          acc = metrics.get('accuracy', 0)
+          print(f"Accuracy: {acc:.4f}")
           if acc < 0.70:
               raise SystemExit(f"FAILED: accuracy {acc:.4f} < 0.70. Pipeline stopped.")
           print(f"PASSED: accuracy {acc:.4f} >= 0.70!")
