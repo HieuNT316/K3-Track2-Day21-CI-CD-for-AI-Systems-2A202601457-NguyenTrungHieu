@@ -68,10 +68,6 @@ jobs:
           name: model
           path: models/model.pkl
 
-      - name: Continue on error
-        continue-on-error: true
-        run: echo "Train step completed"
-
 
   # JOB 3: Upload to AWS S3
   deploy:
