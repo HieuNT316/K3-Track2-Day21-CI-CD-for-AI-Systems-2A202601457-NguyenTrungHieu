@@ -82,11 +82,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: model
-          path: .
+          path: models
 
       - name: Setup AWS CLI
         run: |
           pip install boto3
+
+      - name: Check downloaded files
+        run: |
+          ls -la models/
 
       - name: Upload model to S3
         env:
