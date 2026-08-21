@@ -117,7 +117,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: metrics
-          path: .
+          path: metrics
 
       - name: Check eval gate
         run: |
@@ -125,11 +125,12 @@ jobs:
           import json
           import os
 
-          if not os.path.exists('outputs/metrics.json'):
+          metrics_path = 'metrics/metrics.json'
+          if not os.path.exists(metrics_path):
               print("WARNING: metrics.json not found. Assuming accuracy = 0.75")
               acc = 0.75
           else:
-              with open('outputs/metrics.json') as f:
+              with open(metrics_path) as f:
                   metrics = json.load(f)
               acc = metrics.get('accuracy', 0)
 
