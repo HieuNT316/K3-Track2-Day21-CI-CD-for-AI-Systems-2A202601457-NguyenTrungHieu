@@ -10,7 +10,7 @@ on:
 
 jobs:
 
-  # JOB 1: Unit Tests - Chạy trên dữ liệu ảo (không cần cloud)
+  # JOB 1: Unit Tests
   test:
     name: Unit Test
     runs-on: ubuntu-latest
@@ -28,7 +28,7 @@ jobs:
         run: pytest tests/ -v
 
 
-  # JOB 2: Train - Huấn luyện mô hình (sử dụng train_full.csv)
+  # JOB 2: Train
   train:
     name: Train
     needs: test
@@ -68,10 +68,39 @@ jobs:
           path: models/model.pkl
 
 
-  # JOB 3: Eval - Kiểm tra ngưỡng accuracy >= 0.70
+  # JOB 3: Upload to AWS S3
+  deploy:
+    name: Deploy to S3
+    needs: train
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download model artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: model
+          path: .
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Upload model to S3
+        run: aws s3 cp models/model.pkl s3://mlops-hieu-202608211828/models/latest/model.pkl
+
+      - name: Verify upload
+        run: aws s3 ls s3://mlops-hieu-202608211828/models/latest/
+
+
+  # JOB 4: Eval
   eval:
     name: Eval
-    needs: train
+    needs: deploy
     runs-on: ubuntu-latest
     steps:
       - name: Check eval gate
@@ -80,5 +109,6 @@ jobs:
           acc = float("${{ needs.train.outputs.accuracy }}")
           if acc < 0.70:
               raise SystemExit(f"FAILED: accuracy {acc:.4f} < 0.70. Pipeline stopped.")
-          print(f"PASSED: accuracy {acc:.4f} >= 0.70. Model is ready!")
+          print(f"PASSED: accuracy {acc:.4f} >= 0.70!")
+          print(f"Model deployed to: s3://mlops-hieu-202608211828/models/latest/model.pkl")
           EOF
